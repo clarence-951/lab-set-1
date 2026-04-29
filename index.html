@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Graphics Sketch</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #1a1a1a; overflow: hidden; color: white }
+      h1 {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+      }
+      canvas { display: block; }
+      #error-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        color: #ff5555;
+        font-family: monospace;
+        font-size: 14px;
+        padding: 2rem;
+        z-index: 9999;
+        white-space: pre-wrap;
+        overflow: auto;
+      }
+      #error-overlay.visible { display: block; }
+      #error-overlay h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #ff8888; }
+    </style>
+  </head>
+  <body>
+    <h1>Lab Test</h1>
+    <div id="error-overlay"><h2>⚠ Error</h2><span id="error-message"></span></div>
+ 
+    <script>
+      function showError(msg) {
+        document.getElementById("error-message").textContent = msg;
+        document.getElementById("error-overlay").classList.add("visible");
+      }
+ 
+      // Catch runtime errors (e.g. typos inside draw())
+      window.onerror = (msg, src, line, col) => {
+        showError(`${msg}\n\nat line ${line}, column ${col}`);
+      };
+ 
+      // Catch unhandled promise rejections
+      window.onunhandledrejection = (e) => {
+        showError(e.reason?.stack || String(e.reason));
+      };
+    </script>
+ 
+    <script type="module">
+      // Clear the overlay whenever Vite hot-reloads
+      // so a fixed error doesn't leave the overlay stuck on screen
+      if (import.meta.hot) {
+        import.meta.hot.on("vite:beforeUpdate", () => {
+          document.getElementById("error-overlay").classList.remove("visible");
+        });
+      }
+    </script>
+ 
+
+    <script type="module" src="/02-growing-cubes-step-by-step.js"></script>
+  </body>
+</html>

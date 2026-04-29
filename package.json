@@ -1,0 +1,16 @@
+{
+  "name": "p5-3d-starter",
+  "version": "1.0.0",
+  "description": "Starter project for intro 3D graphics with p5.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "p5": "^1.11.3"
+  },
+  "devDependencies": {
+    "vite": "^6.2.3"
+  }
+}
