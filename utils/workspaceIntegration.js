@@ -1,12 +1,11 @@
 
 
-export function highlight(file, line) {
+export function highlight(stack) {
   // Highlight
   fetch('http://localhost:3333', {
     method: 'POST',
     body: JSON.stringify({ 
-      file: file, 
-      line: line,
+      stack,
       action: 'highlight'
     })
   });

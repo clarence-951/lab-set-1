@@ -8,9 +8,9 @@ vscode.window.showInformationMessage('Workspace Integration Loaded!');
 module.exports.activate = function(context) {
   vscode.window.showInformationMessage('Workspace Integration Activated!');
   
-  // Track current decoration
-  let currentDecoration = null;
-  let currentEditor = null;
+  // Track current decorations for the call stack
+  let currentDecorations = []; // Array of { editor, decoration }
+  let decorationTimeout = null;
   
   const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,12 +19,13 @@ module.exports.activate = function(context) {
       const parsedUrl = url.parse(req.url, true);
       const query = parsedUrl.query;
       
-      let file, line, action;
+      let action, stack;
       
       if (req.method === 'GET') {
-        file = query.file;
-        line = parseInt(query.line);
         action = query.action;
+        // For GET, expect file and line, convert to single-item stack for backwards compatibility
+        const file = query.file;
+        const line = parseInt(query.line);
         
         if (!file || !line || !action) {
           res.writeHead(400);
@@ -32,35 +33,50 @@ module.exports.activate = function(context) {
           return;
         }
         
-        if (action === 'highlight') {
-          await vscode.commands.executeCommand('workspace-integration.highlight', file, line);
-        } else if (action === 'breakpoint') {
-          await vscode.commands.executeCommand('workspace-integration.breakpoint', file, line);
-        }
-        
-        res.writeHead(200);
-        res.end('OK');
+        stack = [{ file, line }];
         
       } else if (req.method === 'POST') {
         let data = '';
         req.on('data', chunk => data += chunk);
         req.on('end', async () => {
-          const { file: postFile, line: postLine, action: postAction } = JSON.parse(data);
+          const body = JSON.parse(data);
+          action = body.action;
+          stack = body.stack; // Expect array of { file, line } objects
           
-          if (postAction === 'highlight') {
-            await vscode.commands.executeCommand('workspace-integration.highlight', postFile, postLine);
-          } else if (postAction === 'breakpoint') {
-            await vscode.commands.executeCommand('workspace-integration.breakpoint', postFile, postLine);
+          if (!action || !Array.isArray(stack)) {
+            res.writeHead(400);
+            res.end('Missing params: action (string), stack (array)');
+            return;
+          }
+          
+          if (action === 'highlight') {
+            await vscode.commands.executeCommand('workspace-integration.highlight', stack);
+          } else if (action === 'breakpoint') {
+            // For breakpoint, use the first (deepest) item in the stack
+            const deepest = stack[0];
+            await vscode.commands.executeCommand('workspace-integration.breakpoint', deepest.file, deepest.line);
           }
           
           res.writeHead(200);
           res.end('OK');
         });
+        return;
         
       } else {
         res.writeHead(405);
         res.end('Method not allowed');
+        return;
       }
+      
+      // Handle GET requests
+      if (action === 'highlight') {
+        await vscode.commands.executeCommand('workspace-integration.highlight', stack);
+      } else if (action === 'breakpoint') {
+        await vscode.commands.executeCommand('workspace-integration.breakpoint', stack[0].file, stack[0].line);
+      }
+      
+      res.writeHead(200);
+      res.end('OK');
       
     } catch (err) {
       vscode.window.showErrorMessage('Error: ' + err.message);
@@ -85,49 +101,73 @@ module.exports.activate = function(context) {
       : path.join(workspaceFolder.uri.fsPath, filePath);
   }
 
-  // Highlight command
-  let highlight = vscode.commands.registerCommand('workspace-integration.highlight', async (filePath, lineNum) => {
-    // Clear old decoration immediately
-    if (currentEditor && currentDecoration) {
-      currentEditor.setDecorations(currentDecoration, []);
+  // Clear all current decorations
+  function clearAllDecorations() {
+    currentDecorations.forEach(({ editor, decoration }) => {
+      try {
+        editor.setDecorations(decoration, []);
+      } catch (err) {
+        // Editor may have been closed
+      }
+    });
+    currentDecorations = [];
+    if (decorationTimeout) {
+      clearTimeout(decorationTimeout);
+      decorationTimeout = null;
+    }
+  }
+
+  // Highlight command - now accepts an array of stack frames
+  let highlight = vscode.commands.registerCommand('workspace-integration.highlight', async (stack) => {
+    // Clear old decorations immediately
+    clearAllDecorations();
+  
+    
+    // Process each stack frame
+    for (let i = 0; i < stack.length; i++) {
+      const { file, line } = stack[i];
+      
+      try {
+        const absolutePath = resolveFilePath(file);
+        const uri = vscode.Uri.file(absolutePath);
+        
+        // Find editor with this file
+        let editor = vscode.window.visibleTextEditors.find(ed => ed.document.uri.fsPath === absolutePath);
+        
+        if (!editor) continue; // Skip if file not open
+        
+        const lineRange = editor.document.lineAt(line - 1).range;
+        const borderColor = i === 0 ? 'red' : 'orange'; // Deepest is red, others orange
+        
+        const decoration = vscode.window.createTextEditorDecorationType({
+          backgroundColor: i?'none':'rgba(100, 255, 100, 0.2)',
+          border: i?'2px dashed green':'2px solid green',
+          isWholeLine: true,
+          gutterIconPath: undefined,
+          /*after: {
+            contentText: ` [Stack ${i}]`,
+            color: 'rgba(0, 0, 0, 0.6)',
+            margin: '0 0 0 1em',
+          }*/
+        });
+        
+        editor.setDecorations(decoration, [lineRange]);
+        
+        // Track decorations
+        currentDecorations.push({ editor, decoration });
+        
+      } catch (err) {
+        console.error(`Failed to highlight ${file}:${line}`, err);
+      }
     }
     
-    const absolutePath = resolveFilePath(filePath);
-    const uri = vscode.Uri.file(absolutePath);
-    
-    // Find editor with this file (don't open it)
-    let editor = vscode.window.visibleTextEditors.find(ed => ed.document.uri.fsPath === absolutePath);
-    
-    /*if (!editor) {
-      // File not visible, just open the document without showing it
-      const doc = await vscode.workspace.openTextDocument(uri);
-      vscode.window.showTextDocument(doc, { preview: true, preserveFocus: true });
-      editor = vscode.window.visibleTextEditors.find(ed => ed.document.uri.fsPath === absolutePath);
-    }*/
-    
-    if (!editor) return;
-    
-    const line = editor.document.lineAt(lineNum - 1);
-    const decoration = vscode.window.createTextEditorDecorationType({
-      backgroundColor: 'rgba(200, 255, 0, 0.2)',
-      border: '1px solid green',
-      isWholeLine: true
-    });
-    
-    editor.setDecorations(decoration, [line.range]);
-    
-    // Track for next highlight
-    currentDecoration = decoration;
-    currentEditor = editor;
-    
-    // Auto-clear after 3 seconds
-    setTimeout(() => {
-      if (currentEditor === editor && currentDecoration === decoration) {
-        currentEditor.setDecorations(decoration, []);
-        currentDecoration = null;
-        currentEditor = null;
-      }
-    }, 3000);
+    // Auto-clear after 5 seconds
+    if (decorationTimeout) {
+      clearTimeout(decorationTimeout);
+    }
+    decorationTimeout = setTimeout(() => {
+      clearAllDecorations();
+    }, 5000);
   });
 
   // Breakpoint command

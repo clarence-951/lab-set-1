@@ -138,7 +138,11 @@ export function drawWithPause(drawFunc) {
                     let newHighlight = `${frame.fileRelative}: ${frame.line}`;
                     if (newHighlight != lastHighlight) {
                         console.log(frame.sourceLine, frame.fileRelative, frame.line);
-                        WI.highlight(frame.fileRelative, frame.line);
+                        let s = e.stack.items.filter(f=>f.fileRelative.startsWith(frame.fileRelative));
+                        console.log(s);
+                        s = s.map(f=>({file: frame.fileRelative, line: f.line}));
+                        console.log(s);
+                        WI.highlight(s);
                         lastHighlight = newHighlight;
                     }
                     break;
