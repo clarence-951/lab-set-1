@@ -1,8 +1,11 @@
 import p5 from "p5";
 import * as axes from "./utils/axes.js";
 import { drawGrid } from "./utils/grid.js";
-import * as activity from "./activityChooser.js";
+//import * as activity from "./activityChooser.js";
 
+const activity = (await import("./activityChooser.js")).default;
+
+console.log("AAA", activity);
 // -------------------------------------------------------
 //  The runner — students don't need to touch any of this.
 //  It handles setup, lighting, camera, and the draw loop.

@@ -1,11 +1,17 @@
 let tex, tex2;
 
 export function preload() {
-    tex = loadImage('activities/tex1.png');
-    tex2 = loadImage('activities/tex2.png');
+    tex = loadImage('lab1/activity99/tex1.png');
+    tex2 = loadImage('lab1/activity99/tex2.png');
 }
 
 export function draw() {
+    orbitControl();
+    background(80,60,80);
+    ambientLight(80);
+    directionalLight(255, 255, 255, 1, 1, -1);
+    noStroke();
+
     angleMode(DEGREES);
 
 

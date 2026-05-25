@@ -1,5 +1,5 @@
-import * as activity from "../01-single-cube";
-export * from "../01-single-cube";
+import * as activity from "./01-single-cube";
+export * from "./01-single-cube";
 import { drawAxes } from "@/utils/axes.js";
 import { drawGrid } from "@/utils/grid.js";
 import { demoMode } from "@/utils/demoMode.js";

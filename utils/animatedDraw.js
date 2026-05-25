@@ -10,12 +10,19 @@ const pauseException = { "pauseException": true };
 let frameCount = 0;
 let frameLimit = 0;
 
+let animateSpeedInput = document.querySelector('#animateSpeed');
+const savedSpeed = localStorage.getItem('animateSpeed') || 1;
+animateSpeedInput.value = savedSpeed;
+animateSpeedInput.addEventListener('change', async (event) => {
+    localStorage.setItem('animateSpeed', event.target.value);
+});
+
 function pause(frames = 1) {
     for ( let i = 0; i < frames; i++){
-        frameCount ++;
+        frameCount++;
         if (frameCount >= frameLimit) {
             frameCount = 0;
-            frameLimit++;
+            frameLimit += parseInt(animateSpeedInput.value);
             pauseException.stack = new StackTracey();
             throw pauseException;
         }
@@ -103,6 +110,10 @@ function unwrap() {
 let stack = [];
 let lastHighlight = "";
 export function drawWithPause(drawFunc) {
+    if (animateSpeedInput.value == 0 ){
+        drawFunc();
+        return;
+    }
     try {
         wrap();
         stack = [];
