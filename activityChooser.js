@@ -44,4 +44,6 @@ dropdown.addEventListener('change', async (event) => {
     window.location.reload();
 });
 
+document.querySelector('#activityChooserControls').style.display = 'block';
+
 export default await loadActivity(savedPath);

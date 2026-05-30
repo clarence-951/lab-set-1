@@ -2,9 +2,10 @@ import StackTracey from 'stacktracey';
 import * as Buffer from 'buffer';
 import * as WI from './workspaceIntegration';
 import { drawAxes } from './axes';
-import p5 from "p5";
-import { draw } from '../lab1/02-lollipop-tree';
+import {label3D } from './textLabel';
 window.Buffer = Buffer.Buffer;
+
+document.querySelector('#animatedDrawControls').style.display = 'block';
 
 const pauseException = { "pauseException": true };
 let frameCount = 0;
@@ -12,6 +13,7 @@ let frameLimit = 0;
 let checkpointCount = 0;
 let checkpointLimit = 0;
 
+let currentSourceLineSpan = document.querySelector('#currentSourceLine');
 
 let animateSpeedInput = document.querySelector('#animateSpeed');
 const savedSpeed = localStorage.getItem('animateSpeed') || 1;
@@ -26,6 +28,10 @@ stepButton.addEventListener('click', function stepClick() {
     console.log("CP Lim", checkpointLimit, "CP Count", checkpointCount);
 });
 
+animateSpeedInput.addEventListener('mousedown', e => e.stopPropagation());
+animateSpeedInput.addEventListener('mouseup', e => e.stopPropagation());
+animateSpeedInput.addEventListener('mousemove', e => e.stopPropagation());
+
 function checkpoint() {
     checkpointCount++;
 }
@@ -35,7 +41,9 @@ function pause(frames = 1) {
     if (speed == 0) {
         if (checkpointCount < checkpointLimit) {
             speed = 5;
-        }
+        } 
+    } else {
+        checkpointLimit = checkpointCount;
     }
     for (let i = 0; i < frames; i++) {
         frameCount++;
@@ -147,6 +155,7 @@ export function drawWithPause(drawFunc) {
         pause(100);
         frameLimit = 0;
         checkpointLimit = 0;
+        currentSourceLineSpan.innerText = "";
         unwrap();
     } catch (e) {
         unwrap();
@@ -163,11 +172,9 @@ export function drawWithPause(drawFunc) {
                     frame = e.stack.withSource(frame);
                     let newHighlight = `${frame.fileRelative}: ${frame.line}`;
                     if (newHighlight != lastHighlight) {
-                        console.log(frame.sourceLine, frame.fileRelative, frame.line);
+                        currentSourceLineSpan.innerText = frame.sourceLine;
                         let s = e.stack.items.filter(f => f.fileRelative.startsWith(frame.fileRelative));
-                        console.log(s);
                         s = s.map(f => ({ file: frame.fileRelative, line: f.line }));
-                        console.log(s);
                         WI.highlight(s);
                         lastHighlight = newHighlight;
                     }

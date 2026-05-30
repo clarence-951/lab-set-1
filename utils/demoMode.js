@@ -16,6 +16,6 @@ radioButtons.forEach(radio => {
     });
 });
 
-document.querySelector('#demoSwitch').style.display = 'block';
+document.querySelector('#demoModeControls').style.display = 'block';
 
 export { demoMode };

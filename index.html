@@ -52,23 +52,33 @@
       margin-bottom: 1rem;
       color: #ff8888;
     }
+
+    #currentSourceLine {
+      font-family: monospace;
+      font-weight: bold;
+      display: block;
+      padding: 20px;
+    }
   </style>
 </head>
 
 <body>
   <div id="header">
     <h1>Lab Test</h1>
-    <div id="demoSwitch" style="display: none;">
+    <div id="demoModeControls" style="display: none;">
       <input type="radio" id="demo" name="mode" value="demo">
       <label for="demo">Demo</label><br>
 
       <input type="radio" id="student" name="mode" value="student">
       <label for="student">Student</label><br>
     </div>
-    <select id="activityDropdown"></select>
-    <div id="speedControl">
+    <div id="activityChooserControls" style="display: none;">
+      <select id="activityDropdown"></select>
+    </div>
+    <div id="animatedDrawControls" style="display: none;">
      Speed: <input type="range" min="0" max="30" id="animateSpeed" value="1"/>
      <button id="animateStep">Step</button>
+     <span id="currentSourceLine"></span>
     </div>
 
   </div>
