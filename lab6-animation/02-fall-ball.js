@@ -16,7 +16,7 @@ let velocity = -4;
                   
 //Gravity. Every second the velocity changes by this much
 //Every second things fall this much faster...
-let gravity = 9.8;
+const gravity = 9.8;
 
 export function draw(time, deltaTime) {
     //time is the number of SECONDS that have elapsed since the program STARTED.

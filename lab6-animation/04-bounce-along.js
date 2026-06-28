@@ -1,14 +1,17 @@
 // -------------------------------------------------------
-//  Bouncing Ball
+//  Falling Ball
 //
-//  We are going to learn and write an "IF" statement!
+//  We are going to make the ball bounce AND move along the x-axis
 //
 // -------------------------------------------------------
 
 
-let position = -4;
-let velocity = 0;
+let positionY = -4;
+let velocityY = 0;
 const gravity = 9.8;
+
+let positionX = 5;
+let velocityX = -.75;
 
 function draw(time, deltaTime) {
 
