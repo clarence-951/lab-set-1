@@ -1,7 +1,6 @@
 import p5 from "p5";
 import * as axes from "./utils/axes.js";
-import { drawGrid } from "./utils/grid.js";
-//import * as activity from "./activityChooser.js";
+
 
 const activity = (await import("./activityChooser.js")).default;
 
@@ -10,6 +9,16 @@ const activity = (await import("./activityChooser.js")).default;
 //  It handles setup, lighting, camera, and the draw loop.
 //  Activities just export setup, draw, or main.
 // -------------------------------------------------------
+
+let seed = localStorage.getItem('seed') === null ? 1 : JSON.parse(localStorage.getItem('seed'));
+const seedInput = document.getElementById("seed");
+seedInput.value = seed;
+
+seedInput.addEventListener('change', async (event) => {
+    localStorage.setItem('seed', event.target.value);
+    seed = +event.target.value;
+    console.log(seed);
+});
 
 
 document.querySelectorAll('input[name="mode"]').forEach(radio => {
@@ -42,6 +51,10 @@ const start = Date.now();
 let last = start;
 
 async function draw() {
+
+  randomSeed(seed);
+  random();
+  
   try {
     let now = Date.now();
     activity.draw((now - start) / 1000, (now - last) / 1000);
